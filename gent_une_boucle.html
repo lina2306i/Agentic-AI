@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent IA - Single Scope Execution</title>
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 30px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge-scope {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    /* Grille Principale */
+    .grid-main {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+
+    /* Panneau Contexte */
+    .sidebar {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .sidebar h3 {
+      font-size: 1rem;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+    }
+
+    .box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.85rem;
+    }
+
+    .box-title {
+      font-weight: bold;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    /* La Seule Boucle (4 Phases) */
+    .loop-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .loop-step {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .loop-step.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    .loop-step .icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .loop-step .title {
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    /* Console & Résultat */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .console-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .console-body {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      min-height: 120px;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .file-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .file-content {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      min-height: 90px;
+      white-space: pre-wrap;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-reset { background: #64748b; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <header>
+      <div>
+        <h2>🤖 Agent IA : Recherche d'Hôtel</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Exécution sur un périmètre restreint (1 Seule Boucle)</p>
+      </div>
+      <span class="badge-scope">Scope : 1 Seule Étape de Planification</span>
+    </header>
+
+    <div class="grid-main">
+      
+      <!-- Contexte -->
+      <div class="sidebar">
+        <h3>📋 Contexte du Scope</h3>
+
+        <div class="box">
+          <div class="box-title">1. Objectif Unique</div>
+          Trouver un hôtel à Paris pour 2 nuits (Budget max: 175€/nuit) et générer la fiche.
+        </div>
+
+        <div class="box">
+          <div class="box-title">2. Outil Nécessaire</div>
+          • <code>google_hotels.search_hotels()</code><br>
+          • Écriture du fichier résultat
+        </div>
+
+        <div class="box">
+          <div class="box-title">3. Règle Strict</div>
+          • Prix ≤ 175 € / nuit<br>
+          • Note client ≥ 4.0 / 5
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: auto;">
+          <button class="btn" style="flex:1" onclick="runSingleLoop()">► Lancer la Boucle</button>
+          <button class="btn btn-reset" onclick="resetSim()">↺</button>
+        </div>
+      </div>
+
+      <!-- Espace de simulation -->
+      <div class="workspace">
+        
+        <!-- Les 4 phases de l'unique boucle -->
+        <div class="loop-container">
+          <div class="loop-step" id="phase-1">
+            <div class="icon">👁️</div>
+            <div class="title">1. Percevoir</div>
+          </div>
+          <div class="loop-step" id="phase-2">
+            <div class="icon">🧠</div>
+            <div class="title">2. Raisonner</div>
+          </div>
+          <div class="loop-step" id="phase-3">
+            <div class="icon">⚡</div>
+            <div class="title">3. Agir</div>
+          </div>
+          <div class="loop-step" id="phase-4">
+            <div class="icon">🔍</div>
+            <div class="title">4. Observer</div>
+          </div>
+        </div>
+
+        <!-- Console -->
+        <div class="console-card">
+          <div class="console-header">
+            <strong>💬 Journal d'Exécution de la Boucle</strong>
+            <span id="status-text" style="font-size: 0.8rem; color: var(--text-muted);">En attente de lancement...</span>
+          </div>
+          <div class="console-body" id="console-output">
+Cliquez sur "► Lancer la Boucle" pour démarrer l'unique cycle de planification de l'hôtel.
+          </div>
+        </div>
+
+        <!-- Inputs / Outputs -->
+        <div class="bottom-grid">
+          <div class="file-box">
+            <div class="box-title">📥 Donnée d'entrée (Demande)</div>
+            <div class="file-content">Localisation : Paris Centre
+Plafond prix : 175 € / nuit
+Critère : Note ≥ 4.0/5</div>
+          </div>
+
+          <div class="file-box">
+            <div class="box-title">📄 Fichier généré (hotel_selectionne.txt)</div>
+            <div class="file-content" id="file-output">(En attente d'écriture...)</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function runSingleLoop() {
+      const output = document.getElementById('console-output');
+      const fileOut = document.getElementById('file-output');
+      const statusText = document.getElementById('status-text');
+
+      // 1. Percevoir
+      document.getElementById('phase-1').classList.add('active');
+      statusText.innerText = "Phase 1: Percevoir";
+      output.innerText = `👁️ [PERCEVOIR] Lecture de la contrainte unique :\nRechercher un hôtel à Paris Centre avec un tarif <= 175€/nuit.`;
+
+      // 2. Raisonner
+      setTimeout(() => {
+        document.getElementById('phase-1').classList.remove('active');
+        document.getElementById('phase-2').classList.add('active');
+        statusText.innerText = "Phase 2: Raisonner";
+        output.innerText += `\n\n🧠 [RAISONNER] Définition des filtres pour l'API Hôtels :\nLocation="Paris Centre", MaxPrice=175, MinRating=4.0.`;
+      }, 1200);
+
+      // 3. Agir
+      setTimeout(() => {
+        document.getElementById('phase-2').classList.remove('active');
+        document.getElementById('phase-3').classList.add('active');
+        statusText.innerText = "Phase 3: Agir";
+        output.innerText += `\n\n⚡ [AGIR] Exécution de google_hotels.search_hotels()...\n➔ Hôtel "Hôtel Paris Centre" trouvé à 160€/nuit (Note: 4.5/5).`;
+      }, 2400);
+
+      // 4. Observer
+      setTimeout(() => {
+        document.getElementById('phase-3').classList.remove('active');
+        document.getElementById('phase-4').classList.add('active');
+        statusText.innerText = "Phase 4: Observer & Terminer";
+        output.innerText += `\n\n🔍 [OBSERVER] Prix (160€) <= Limite (175€). Condition respectée.\nÉcriture du résultat dans hotel_selectionne.txt. Fin de la boucle.`;
+
+        fileOut.innerText = `=== SELECTION HÔTEL ===\nNom : Hôtel Paris Centre\nTarif : 160 € / nuit\nNote : 4.5 / 5 (Très bon)\nStatut : Validé dans le budget`;
+      }, 3600);
+    }
+
+    function resetSim() {
+      document.querySelectorAll('.loop-step').forEach(el => el.classList.remove('active'));
+      document.getElementById('console-output').innerText = 'Cliquez sur "► Lancer la Boucle" pour démarrer l\'unique cycle de planification de l\'hôtel.';
+      document.getElementById('file-output').innerText = '(En attente d\'écriture...)';
+      document.getElementById('status-text').innerText = 'En attente de lancement...';
+    }
+  </script>
+
+</body>
+</html>
