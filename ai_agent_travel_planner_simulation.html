@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent IA : Planificateur de Voyage - Simulation Agentique</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0284c7',
+              700: '#0369a1',
+            },
+            accent: {
+              500: '#f97316',
+              600: '#ea580c',
+            },
+            sand: '#fdfbf7',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #fef3c7 100%);
+      min-height: 100vh;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 10px 30px -10px rgba(0, 100, 150, 0.08);
+    }
+
+    .glass-card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card-hover:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px -5px rgba(2, 132, 199, 0.15);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.03);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(2, 132, 199, 0.2);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(2, 132, 199, 0.4);
+    }
+
+    /* Pulse active phase effect */
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+    }
+    .active-phase-card {
+      animation: pulse-border 2s infinite;
+      border-color: #0284c7 !important;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 p-4 md:p-6 lg:p-8">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- HEADER / BARRE DE TITRE -->
+    <header class="glass-card rounded-2xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-sky-100">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center text-white text-2xl shadow-md shadow-sky-200">
+          <i class="fa-solid fa-compass fa-spin-pulse" style="--fa-animation-duration: 10s;"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold bg-gradient-to-r from-sky-700 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+            Agent IA Planificateur de Voyage
+          </h1>
+          <p class="text-xs font-semibold text-slate-500 flex items-center gap-2 mt-0.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            Simulation de Boucle Agentique Interactive (Kanban & Storyboard)
+          </p>
+        </div>
+      </div>
+
+      <!-- BOUTONS DE CONTRÔLE PRINCIPAUX -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+        <button id="btn-reset" onclick="resetSimulation()" class="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition flex items-center gap-2 active:scale-95">
+          <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+        </button>
+        <button id="btn-next" onclick="nextStep()" class="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 shadow-md shadow-sky-200 transition flex items-center gap-2 active:scale-95">
+          <span>Étape Suivante</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- SECTION SUPERIEURE : FICHE AGENT (ACCORDION / GRID CLAIR) -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Objectif -->
+      <div class="glass-card glass-card-hover rounded-2xl p-4 border-l-4 border-l-sky-500 flex flex-col">
+        <div class="flex items-center gap-2 text-sky-700 font-bold text-sm mb-2">
+          <i class="fa-solid fa-bullseye text-sky-500"></i>
+          <span>1. Objectif</span>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed font-medium">
+          Concevoir un itinéraire personnalisé à Paris pour 3 jours (budget 800 € max, rythme modéré, visites culturelles) et exporter la réservation dans <span class="font-mono bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded text-[10px] font-bold">itineraire_voyage.txt</span>.
+        </p>
+      </div>
+
+      <!-- Outils -->
+      <div class="glass-card glass-card-hover rounded-2xl p-4 border-l-4 border-l-teal-500 flex flex-col">
+        <div class="flex items-center gap-2 text-teal-700 font-bold text-sm mb-2">
+          <i class="fa-solid fa-screwdriver-wrench text-teal-500"></i>
+          <span>2. Outils Disponibles</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mt-1">
+          <span class="text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <i class="fa-solid fa-plane text-[9px]"></i> google_flights
+          </span>
+          <span class="text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <i class="fa-solid fa-hotel text-[9px]"></i> google_hotels
+          </span>
+          <span class="text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <i class="fa-solid fa-map-location-dot text-[9px]"></i> maps_places
+          </span>
+          <span class="text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <i class="fa-solid fa-file-export text-[9px]"></i> write_file
+          </span>
+        </div>
+      </div>
+
+      <!-- Règles d'exécution -->
+      <div class="glass-card glass-card-hover rounded-2xl p-4 border-l-4 border-l-amber-500 flex flex-col">
+        <div class="flex items-center gap-2 text-amber-700 font-bold text-sm mb-2">
+          <i class="fa-solid fa-scale-balanced text-amber-500"></i>
+          <span>3. Règles Stricte</span>
+        </div>
+        <ul class="text-xs text-slate-600 space-y-1 font-medium">
+          <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-amber-500 text-[10px]"></i> <b>Budget :</b> Total ≤ 800€ (Strict)</li>
+          <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-amber-500 text-[10px]"></i> <b>Rythme :</b> Max 2-3 visites/jour</li>
+          <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-amber-500 text-[10px]"></i> <b>Horaires :</b> Prise en compte fermetures</li>
+        </ul>
+      </div>
+
+      <!-- Condition d'arrêt -->
+      <div class="glass-card glass-card-hover rounded-2xl p-4 border-l-4 border-l-rose-500 flex flex-col">
+        <div class="flex items-center gap-2 text-rose-700 font-bold text-sm mb-2">
+          <i class="fa-solid fa-flag-checkered text-rose-500"></i>
+          <span>4. Condition d'Arrêt</span>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed font-medium">
+          Itinéraire validé sans dépassement budgétaire, jours de fermeture vérifiés, et fichier texte final généré avec succès.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- SECTION CENTRALE : STORYBOARD / KANBAN DYNAMIUQE DES 4 PHASES -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+          <i class="fa-solid fa-diagram-project text-sky-500"></i>
+          Workflow Agentique en Temps Réel (Storyboard)
+        </h2>
+        <span id="phase-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-200 text-slate-600">
+          En attente de démarrage
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- PHASE 1 : PERCEVOIR -->
+        <div id="card-phase-1" class="glass-card rounded-2xl p-4 border-2 border-transparent transition-all duration-300 relative overflow-hidden flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-100 flex items-center gap-1.5">
+              <i class="fa-solid fa-eye"></i> 1. PERCEVOIR
+            </span>
+            <span id="status-1" class="text-[10px] font-bold text-slate-400">EN ATTENTE</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium mb-3">Collecte des paramètres utilisateurs et analyse des contraintes initiales.</p>
+          <div id="content-phase-1" class="text-xs font-mono bg-white/60 p-2.5 rounded-xl border border-slate-100 text-slate-600 flex-1 min-h-[90px] flex items-center justify-center text-center italic">
+            Patientez...
+          </div>
+        </div>
+
+        <!-- PHASE 2 : RAISONNER -->
+        <div id="card-phase-2" class="glass-card rounded-2xl p-4 border-2 border-transparent transition-all duration-300 relative overflow-hidden flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 flex items-center gap-1.5">
+              <i class="fa-solid fa-brain"></i> 2. RAISONNER
+            </span>
+            <span id="status-2" class="text-[10px] font-bold text-slate-400">EN ATTENTE</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium mb-3">Décomposition du budget et calcul des limites par poste de dépense.</p>
+          <div id="content-phase-2" class="text-xs font-mono bg-white/60 p-2.5 rounded-xl border border-slate-100 text-slate-600 flex-1 min-h-[90px] flex items-center justify-center text-center italic">
+            Patientez...
+          </div>
+        </div>
+
+        <!-- PHASE 3 : AGIR -->
+        <div id="card-phase-3" class="glass-card rounded-2xl p-4 border-2 border-transparent transition-all duration-300 relative overflow-hidden flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100 flex items-center gap-1.5">
+              <i class="fa-solid fa-bolt"></i> 3. AGIR
+            </span>
+            <span id="status-3" class="text-[10px] font-bold text-slate-400">EN ATTENTE</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium mb-3">Exécution des requêtes vers les API externes et recherche d'offres.</p>
+          <div id="content-phase-3" class="text-xs font-mono bg-white/60 p-2.5 rounded-xl border border-slate-100 text-slate-600 flex-1 min-h-[90px] flex items-center justify-center text-center italic">
+            Patientez...
+          </div>
+        </div>
+
+        <!-- PHASE 4 : OBSERVER -->
+        <div id="card-phase-4" class="glass-card rounded-2xl p-4 border-2 border-transparent transition-all duration-300 relative overflow-hidden flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 flex items-center gap-1.5">
+              <i class="fa-solid fa-magnifying-glass font-bold"></i> 4. OBSERVER
+            </span>
+            <span id="status-4" class="text-[10px] font-bold text-slate-400">EN ATTENTE</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium mb-3">Contrôle de cohérence finale, validation et écriture de l'itinéraire.</p>
+          <div id="content-phase-4" class="text-xs font-mono bg-white/60 p-2.5 rounded-xl border border-slate-100 text-slate-600 flex-1 min-h-[90px] flex items-center justify-center text-center italic">
+            Patientez...
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION INFERIEURE : JOURNAL DES PENSÉES & RÉSULTAT RENDER -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- CONSOLE ET JOURNAL DES PENSÉES (REASONING TRACE) -->
+      <div class="lg:col-span-7 glass-card rounded-2xl p-5 flex flex-col h-[380px]">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-terminal text-sky-500"></i>
+            Journal des Pensées de l'Agent (Reasoning Trace)
+          </h3>
+          <span id="trace-counter" class="text-[11px] font-bold bg-sky-100 text-sky-700 px-2.5 py-0.5 rounded-full">
+            Étape 0 / 6
+          </span>
+        </div>
+
+        <div id="console-trace" class="flex-1 bg-slate-900 text-sky-300 font-mono text-xs p-4 rounded-xl overflow-y-auto space-y-2 border border-slate-800 leading-relaxed">
+          <div class="text-slate-500 italic">[SYSTEM] Agent en attente. Cliquez sur "Étape Suivante" pour exécuter la première itération...</div>
+        </div>
+      </div>
+
+      <!-- FICHIER RESULTAT GENERÉ (itineraire_voyage.txt) -->
+      <div class="lg:col-span-5 glass-card rounded-2xl p-5 flex flex-col h-[380px] border-2 border-amber-200/50">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-file-lines text-amber-500"></i>
+            Fichier Généré : <span class="text-amber-600 font-mono">itineraire_voyage.txt</span>
+          </h3>
+          <span id="file-status" class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+            NON GÉNÉRÉ
+          </span>
+        </div>
+
+        <div class="flex-1 bg-amber-50/40 border border-amber-200/60 rounded-xl p-4 font-mono text-xs text-slate-700 overflow-y-auto relative">
+          <pre id="file-content" class="whitespace-pre-wrap leading-relaxed text-[11px]">
+<span class="text-slate-400 italic">// Le contenu du fichier s'affichera ici une fois l'itinéraire validé par l'agent...</span>
+          </pre>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- JAVASCRIPT DE LA SIMULATION -->
+  <script>
+    // Étapes de la simulation
+    const stepsData = [
+      {
+        phase: 1,
+        phaseName: "Percevoir",
+        badge: "Analyse initiale",
+        badgeColor: "bg-sky-500 text-white",
+        phaseContent: "📍 <b>Destination:</b> Paris<br>💶 <b>Budget:</b> 800€<br>📅 <b>Durée:</b> 3 jours<br>🎭 <b>Style:</b> Culture & Gastro",
+        consoleLog: `[1. PERCEVOIR] 📥 Lecture des spécifications de l'utilisateur.
+-> Destination : Paris
+-> Budget max : 800 €
+-> Préférences : Musées, Gastronomie, Rythme modéré.
+-> Extraction des contraintes système terminée.`,
+        fileContent: null
+      },
+      {
+        phase: 2,
+        phaseName: "Raisonner",
+        badge: "Calcul du Budget",
+        badgeColor: "bg-amber-500 text-white",
+        phaseContent: "📊 <b>Ventilation:</b><br>• Vol Max : 300€<br>• Hôtel Max : 350€<br>• Restant : 150€",
+        consoleLog: `[2. RAISONNER] 🧠 Analyse prédictive du budget.
+-> Allocation Vol A/R max : 300 €
+-> Allocation Logement (2 nuits) : 350 € (max 175€/nuit)
+-> Budget Restant Activités/Nourriture : 150 €
+-> Décision : Lancement de la recherche de vol d'abord.`,
+        fileContent: null
+      },
+      {
+        phase: 3,
+        phaseName: "Agir",
+        badge: "Recherche Vols",
+        badgeColor: "bg-teal-500 text-white",
+        phaseContent: "✈️ <b>Call:</b> google_flights()<br><b>Trouvé:</b> Vol A/R à 240€<br>✅ Économie : 60€",
+        consoleLog: `[3. AGIR] ⚡ Apport de l'outil : google_flights.search(destination="PAR", budget_max=300)
+-> Envoi de la requête API...
+-> Résultat obtenu : Vol A/R disponible à 240 €.
+-> Économie réalisée sur le poste Vol : +60 €.`,
+        fileContent: null
+      },
+      {
+        phase: 2,
+        phaseName: "Raisonner",
+        badge: "Ajustement Hôtel",
+        badgeColor: "bg-amber-500 text-white",
+        phaseContent: "🏨 <b>Nouveau Solde Hôtel:</b><br>350€ + 60€ = 410€ max.<br>Recherche hôtel disponible central.",
+        consoleLog: `[2. RAISONNER] 🧠 Mise à jour dynamique de l'enveloppe budgétaire.
+-> Solde global disponible : 800 € - 240 € = 560 €.
+-> Budget réajusté pour l'hôtel : jusqu'à 180 € / nuit.
+-> Lancement de la recherche d'hébergement.`,
+        fileContent: null
+      },
+      {
+        phase: 3,
+        phaseName: "Agir",
+        badge: "Recherche Hôtels & Cartes",
+        badgeColor: "bg-teal-500 text-white",
+        phaseContent: "🏨 <b>Hôtel:</b> Paris Centre (320€)<br>🗺️ <b>Places:</b> Louvre, Orsay<br>✅ Horaires vérifiés",
+        consoleLog: `[3. AGIR] ⚡ Execution des outils :
+1. google_hotels.search(zone="Paris Centre", max_price=180) 
+   -> Hôtel sélectionné : 160 € / nuit (Total 2 nuits = 320 €).
+2. maps_places.query("Louvre", "Orsay")
+   -> Horaires et jours de fermeture validés (Louvre ouvert le mercredi).`,
+        fileContent: null
+      },
+      {
+        phase: 4,
+        phaseName: "Observer",
+        badge: "Validation & Export",
+        badgeColor: "bg-purple-600 text-white",
+        phaseContent: "✅ <b>Total:</b> 680€ / 800€<br>📄 <b>Exportation:</b> Success<br>🎯 <b>Statut:</b> Mission accomplie",
+        consoleLog: `[4. OBSERVER] 🔍 Contrôle final des conditions d'arrêt :
+- Budget Total : 240€ (Vol) + 320€ (Hôtel) + 120€ (Visites/Repas) = 680 € (≤ 800 € OK).
+- Rythme : 2 activités majeures par jour (OK).
+- Génération du fichier "itineraire_voyage.txt"... Done !
+- [CONDITION D'ARRÊT ATTEINTE] Mission terminée avec succès.`,
+        fileContent: `================================================
+    ITINÉRAIRE DE VOYAGE : PARIS (3 JOURS)
+================================================
+Budget global : 680 € / 800 € (Économie : 120 €)
+
+--- TRANSPORTS & HÉBERGEMENT ---
+• Vol Aller-Retour : 240 € (Réservé via google_flights)
+• Hébergement : "Hôtel Paris Centre"
+  - Nuits : 2 nuits (160 € / nuit = 320 €)
+
+--- PROGRAMME DÉTAILLÉ ---
+[JOUR 1 - Rive Droite & Art]
+• Matin : Visite guidée du Musée du Louvre (20 €)
+• Déjeuner : Le Bistro des Tuileries
+• Après-midi : Promenade au Jardin des Tuileries & Place Vendôme
+
+[JOUR 2 - Rive Gauche & Culture]
+• Matin : Musée d'Orsay (16 €)
+• Déjeuner : Café de Flore / Quartier Latin
+• Après-midi : Balade Panthéon & Jardin du Luxembourg
+
+[JOUR 3 - Vue Panoramique]
+• Matin : Quartier Montmartre & Sacré-Cœur
+• Après-midi : Temps libre & Déplacement vers l'aéroport
+
+================================================
+Fichier généré automatiquement par l'Agent IA.
+================================================`
+      }
+    ];
+
+    let currentStepIndex = 0;
+
+    function updateUI() {
+      // Reinitialiser les effets visuels des cartes phases
+      for (let i = 1; i <= 4; i++) {
+        const card = document.getElementById(`card-phase-${i}`);
+        card.classList.remove('active-phase-card');
+        document.getElementById(`status-${i}`).innerText = "EN ATTENTE";
+        document.getElementById(`status-${i}`).className = "text-[10px] font-bold text-slate-400";
+      }
+
+      const traceBox = document.getElementById('console-trace');
+
+      if (currentStepIndex === 0) {
+        // État initial
+        for (let i = 1; i <= 4; i++) {
+          document.getElementById(`content-phase-${i}`).innerHTML = '<span class="text-slate-400 italic">Patientez...</span>';
+        }
+        traceBox.innerHTML = '<div class="text-slate-500 italic">[SYSTEM] Agent en attente. Cliquez sur "Étape Suivante" pour exécuter la première itération...</div>';
+        document.getElementById('trace-counter').innerText = 'Étape 0 / ' + stepsData.length;
+        document.getElementById('phase-badge').innerText = 'En attente de démarrage';
+        document.getElementById('phase-badge').className = 'text-xs font-bold px-3 py-1 rounded-full bg-slate-200 text-slate-600';
+        
+        document.getElementById('file-content').innerHTML = '<span class="text-slate-400 italic">// Le contenu du fichier s\'affichera ici une fois l\'itinéraire validé par l\'agent...</span>';
+        document.getElementById('file-status').innerText = 'NON GÉNÉRÉ';
+        document.getElementById('file-status').className = 'text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded';
+        
+        document.getElementById('btn-next').disabled = false;
+        document.getElementById('btn-next').classList.remove('opacity-50', 'cursor-not-allowed');
+        return;
+      }
+
+      // Appliquer les étapes jusqu'à l'index courant
+      let logsHTML = "";
+      for (let i = 0; i < currentStepIndex; i++) {
+        const data = stepsData[i];
+        logsHTML += `<div class="mb-2 pb-2 border-b border-slate-800/60">${data.consoleLog.replace(/\n/g, '<br>')}</div>`;
+      }
+      traceBox.innerHTML = logsHTML;
+      traceBox.scrollTop = traceBox.scrollHeight;
+
+      // Mettre à jour la phase courante
+      const currentData = stepsData[currentStepIndex - 1];
+      const activeCard = document.getElementById(`card-phase-${currentData.phase}`);
+      activeCard.classList.add('active-phase-card');
+
+      document.getElementById(`status-${currentData.phase}`).innerText = "ACTIF";
+      document.getElementById(`status-${currentData.phase}`).className = "text-[10px] font-bold text-sky-600 bg-sky-100 px-2 py-0.5 rounded animate-pulse";
+
+      document.getElementById(`content-phase-${currentData.phase}`).innerHTML = currentData.phaseContent;
+
+      document.getElementById('trace-counter').innerText = `Étape ${currentStepIndex} / ${stepsData.length}`;
+      document.getElementById('phase-badge').innerText = `Phase en cours : ${currentData.phaseName}`;
+      document.getElementById('phase-badge').className = `text-xs font-bold px-3 py-1 rounded-full ${currentData.badgeColor}`;
+
+      // Si fichier généré à cette étape
+      if (currentData.fileContent) {
+        document.getElementById('file-content').innerText = currentData.fileContent;
+        document.getElementById('file-status').innerText = 'RÉDACTION COMPLÉTÉE';
+        document.getElementById('file-status').className = 'text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded';
+      }
+
+      // Si fin des étapes
+      if (currentStepIndex === stepsData.length) {
+        document.getElementById('btn-next').disabled = true;
+        document.getElementById('btn-next').classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIndex < stepsData.length) {
+        currentStepIndex++;
+        updateUI();
+      }
+    }
+
+    function resetSimulation() {
+      currentStepIndex = 0;
+      updateUI();
+    }
+  </script>
+</body>
+</html>
