@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Agent IA - Planificateur de Voyage</title>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #090d16 0%, #111827 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 1400px;
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 24px;
+    }
+
+    /* Panneau Latéral : Paramètres & Contexte */
+    .panel-config {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .panel-config h2 {
+      font-size: 1.25rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 10px;
+    }
+
+    .config-group {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .config-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .config-content {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .config-content ul {
+      padding-left: 16px;
+    }
+
+    .control-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: auto;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-run {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .btn-run:hover { background: #4f46e5; }
+
+    .btn-reset {
+      background: #334155;
+      color: var(--text-main);
+    }
+    .btn-reset:hover { background: #475569; }
+
+    /* Espace Principal (Workspace) */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Pipeline des 4 États (Timeline Horizontale Moderne) */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .pipeline-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pipeline-step.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, var(--bg-card) 100%);
+      box-shadow: 0 0 20px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .step-number {
+      font-size: 0.7rem;
+      background: var(--border);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    .pipeline-step.active .step-number {
+      background: var(--accent);
+      color: white;
+    }
+
+    .pipeline-step h3 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .pipeline-step p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Terminal d'Exécution en Temps Réel */
+    .terminal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 250px;
+    }
+
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .terminal-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-status {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .terminal-screen {
+      background: #030712;
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* Grille Inférieure (Input / Output) */
+    .grid-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .card-box h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .box-content {
+      background: #030712;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      min-height: 100px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard">
+    
+    <!-- Panneau de Configuration de l'Agent -->
+    <div class="panel-config">
+      <h2>⚙️ Paramètres Agent</h2>
+
+      <div class="config-group">
+        <div class="config-title">🎯 Objectif Principal</div>
+        <div class="config-content">Créer un plan de voyage optimisé (vols, hôtels, activités) selon le budget et l'exporter proprement.</div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-title">🛠️ Outils Actifs</div>
+        <div class="config-content">
+          <ul>
+            <li>google_flights.search()</li>
+            <li>google_hotels.search()</li>
+            <li>maps_local:query_places()</li>
+            <li>write_file()</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-title">⚖️ Règles d'Exécution</div>
+        <div class="config-content" style="color: #f43f5e; font-weight: 500;">
+          • Budget Global Strict (≤ Max)<br>
+          • Rythme Modéré (max 3 activités/j)<br>
+          • Cohérence Géographique & Horaires
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-title">🛑 Condition d'Arrêt</div>
+        <div class="config-content">Validation complète de l'itinéraire et écriture réussie du fichier de sortie.</div>
+      </div>
+
+      <div class="control-actions">
+        <button class="btn btn-run" onclick="nextExecutionStep()">▶ Exécuter Étape</button>
+        <button class="btn btn-reset" onclick="resetSimulation()">↺ Réinitialiser</button>
+      </div>
+    </div>
+
+    <!-- Espace Principal de Visualisation -->
+    <div class="workspace">
+      
+      <!-- Pipeline des 4 États -->
+      <div class="pipeline">
+        <div class="pipeline-step" id="p-step-1">
+          <span class="step-number">Phase 01</span>
+          <h3>Percevoir</h3>
+          <p>Lecture des critères</p>
+        </div>
+        <div class="pipeline-step" id="p-step-2">
+          <span class="step-number">Phase 02</span>
+          <h3>Raisonner</h3>
+          <p>Analyse & Allocation</p>
+        </div>
+        <div class="pipeline-step" id="p-step-3">
+          <span class="step-number">Phase 03</span>
+          <h3>Agir</h3>
+          <p>Requêtes API Outils</p>
+        </div>
+        <div class="pipeline-step" id="p-step-4">
+          <span class="step-number">Phase 04</span>
+          <h3>Observer</h3>
+          <p>Vérification & Export</p>
+        </div>
+      </div>
+
+      <!-- Console d'Exécution -->
+      <div class="terminal-card">
+        <div class="terminal-header">
+          <div class="terminal-title">🖥️ Flux d'Exécution en Direct (<span id="step-counter">Étape 0/6</span>)</div>
+          <div class="badge-status" id="status-badge">En attente</div>
+        </div>
+        <div class="terminal-screen" id="terminal-screen">
+          [SYSTEM] Initialisation de l'agent planificateur de voyage... Prêt à démarrer.
+        </div>
+      </div>
+
+      <!-- Données Entrées / Sorties -->
+      <div class="grid-bottom">
+        <div class="card-box">
+          <h4>📥 Données d'Entrée (Input)</h4>
+          <div class="box-content">Destination : Paris
+Durée : 3 Jours / 2 Nuits
+Budget Plafond : 800 €
+Intérêts : Culture & Gastronomie
+Rythme : Modéré</div>
+        </div>
+
+        <div class="card-box">
+          <h4>📤 Fichier Résultat (Output)</h4>
+          <div class="box-content" id="output-file-content">
+[Fichier en attente d'écriture...]
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const simSteps = [
+      {
+        phase: 1,
+        status: "Perception en cours",
+        log: `[PERCEVOIR] Analyse de la requête utilisateur :\n- Destination cible : Paris\n- Enveloppe budgétaire : 800 €\n- Préférences : Culture, Gastronomie`
+      },
+      {
+        phase: 2,
+        status: "Planification budgétaire",
+        log: `[RAISONNER] Répartition stratégique des coûts :\n- Allocation Vol : Max 300 €\n- Allocation Hébergement : Max 350 €\n- Marge Activités/Repas : 150 €`
+      },
+      {
+        phase: 3,
+        status: "Appel Outils (Vols)",
+        log: `[AGIR] Exécution de google_flights.search(destination="PAR", budget=300)\n➔ Succès : Vol aller-retour trouvé à 240 €.`
+      },
+      {
+        phase: 2,
+        status: "Réajustement Logistique",
+        log: `[RAISONNER] Solde restant pour l'hôtel : 800 - 240 = 560 €. Ajustement de la recherche d'hébergement à un maximum de 175 € par nuit.`
+      },
+      {
+        phase: 3,
+        status: "Appel Outils (Hôtels & Maps)",
+        log: `[AGIR] Exécution de google_hotels.search() & maps_local:query_places()\n➔ Succès : Hôtel sélectionné à 160€/nuit (Total 320€). Activités culturelles validées.`
+      },
+      {
+        phase: 4,
+        status: "Finalisation & Export",
+        log: `[OBSERVER] Vérification finale : Coût total = 560€ (Transport + Hôtel) + 120€ (Activités) = 680€ (≤ 800€). \nÉcriture réussie du fichier itineraire_voyage.txt. Fin de mission.`,
+        output: `=== ITINÉRAIRE FINAL : PARIS ===
+Budget Global : 680 € / 800 € (Conforme)
+
+[TRANSPORTS & HÉBERGEMENT]
+• Vol A/R : 240 €
+• Hôtel Paris Centre : 320 € (2 nuits)
+
+[PROGRAMME JOURNALIER]
+• Jour 1 : Musée du Louvre + Bistro
+• Jour 2 : Musée d'Orsay + Quartier Latin
+• Jour 3 : Montmartre & Départ`
+      }
+    ];
+
+    let currentIndex = 0;
+
+    function updateDashboard() {
+      // Nettoyer les classes actives
+      document.querySelectorAll('.pipeline-step').forEach(el => el.classList.remove('active'));
+
+      if (currentIndex === 0) {
+        document.getElementById('terminal-screen').innerText = '[SYSTEM] Initialisation de l\'agent planificateur de voyage... Prêt à démarrer.';
+        document.getElementById('step-counter').innerText = 'Étape 0/6';
+        document.getElementById('status-badge').innerText = 'En attente';
+        document.getElementById('output-file-content').innerText = '[Fichier en attente d\'écriture...]';
+        return;
+      }
+
+      const current = simSteps[currentIndex - 1];
+      
+      // Activer l'étape correspondante dans le pipeline
+      document.getElementById(`p-step-${current.phase}`).classList.add('active');
+
+      // Mettre à jour le terminal
+      document.getElementById('terminal-screen').innerText = current.log;
+      document.getElementById('step-counter').innerText = `Étape ${currentIndex}/6`;
+      document.getElementById('status-badge').innerText = current.status;
+
+      // Afficher le fichier résultat à la fin
+      if (current.output) {
+        document.getElementById('output-file-content').innerText = current.output;
+      }
+    }
+
+    function nextExecutionStep() {
+      if (currentIndex < simSteps.length) {
+        currentIndex++;
+        updateDashboard();
+      }
+    }
+
+    function resetSimulation() {
+      currentIndex = 0;
+      updateDashboard();
+    }
+  </script>
+</body>
+</html>
