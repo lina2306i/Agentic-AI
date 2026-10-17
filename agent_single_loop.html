@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Planificateur de Voyage - Boucle Unique</title>
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* En-tête */
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      color: var(--primary);
+    }
+
+    .btn-execute {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-execute:hover {
+      background: #1d4ed8;
+    }
+
+    /* Contexte et Règles */
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .config-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .config-card h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .config-card p, .config-card ul {
+      font-size: 0.85rem;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    .config-card ul {
+      padding-left: 16px;
+    }
+
+    /* Cycle unique : 4 phases */
+    .loop-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .phase-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .phase-card.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+
+    .phase-content {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Output console & File */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .box-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .box-card h3 {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      color: var(--text-main);
+    }
+
+    .code-box {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 12px;
+      border-radius: 6px;
+      min-height: 140px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header>
+      <div>
+        <h1>✈️ Agent Voyage - Boucle Unique</h1>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Exécution en un seul cycle : Percevoir ➔ Raisonner ➔ Agir ➔ Observer</p>
+      </div>
+      <button class="btn-execute" onclick="runSingleLoop()">▶ Lancer la Boucle Unique</button>
+    </header>
+
+    <!-- Fiche de définition -->
+    <div class="config-grid">
+      <div class="config-card">
+        <h3>1. Objectif</h3>
+        <p>Générer un itinéraire sur-mesure (vol, hôtel, visites) sous les 800€ et enregistrer dans <code>itineraire_voyage.txt</code>.</p>
+      </div>
+      <div class="config-card">
+        <h3>2. Outils</h3>
+        <ul>
+          <li>google_flights.search()</li>
+          <li>google_hotels.search()</li>
+          <li>maps_local:query_places()</li>
+          <li>write_file()</li>
+        </ul>
+      </div>
+      <div class="config-card">
+        <h3>3. Règles</h3>
+        <p style="color: #e11d48; font-weight: 500;">
+          • Budget ≤ 800€<br>
+          • Rythme modéré<br>
+          • Quartiers regroupés
+        </p>
+      </div>
+      <div class="config-card">
+        <h3>4. Condition d'Arrêt</h3>
+        <p>Le plan est complet, respecte le budget et le fichier est écrit avec succès.</p>
+      </div>
+    </div>
+
+    <!-- Boucle Unique (4 Phases) -->
+    <div class="loop-container">
+      <div class="phase-card" id="phase-1">
+        <div class="phase-header">👁️ 1. PERCEVOIR</div>
+        <div class="phase-content" id="p1-text">En attente d'exécution...</div>
+      </div>
+      <div class="phase-card" id="phase-2">
+        <div class="phase-header">🧠 2. RAISONNER</div>
+        <div class="phase-content" id="p2-text">En attente d'exécution...</div>
+      </div>
+      <div class="phase-card" id="phase-3">
+        <div class="phase-header">⚡ 3. AGIR</div>
+        <div class="phase-content" id="p3-text">En attente d'exécution...</div>
+      </div>
+      <div class="phase-card" id="phase-4">
+        <div class="phase-header">🔍 4. OBSERVER</div>
+        <div class="phase-content" id="p4-text">En attente d'exécution...</div>
+      </div>
+    </div>
+
+    <!-- Données & Fichier de sortie -->
+    <div class="bottom-grid">
+      <div class="box-card">
+        <h3>📥 Demande Utilisateur (Entrée)</h3>
+        <div class="code-box" style="color: #cbd5e1;">[Demande Utilisateur]
+- Destination : Paris
+- Durée : 3 jours / 2 nuits
+- Budget Max : 800 €
+- Thème : Culture & Gastronomie</div>
+      </div>
+
+      <div class="box-card">
+        <h3>📤 Fichier Résultat (itineraire_voyage.txt)</h3>
+        <div class="code-box" id="file-output" style="color: #34d399;">(Fichier vide)</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function runSingleLoop() {
+      // Activer visuellement toutes les cartes de la boucle unique
+      document.querySelectorAll('.phase-card').forEach(el => el.classList.add('active'));
+
+      // 1. PERCEVOIR
+      document.getElementById('p1-text').innerText = 
+        "Lecture des critères :\n• Destination: Paris\n• Budget: 800€\n• Thème: Culture & Gastronomie";
+
+      // 2. RAISONNER
+      document.getElementById('p2-text').innerText = 
+        "Calcul du plan d'action :\n• Vol ≤ 250€\n• Hôtel ≤ 350€\n• Reste ≤ 200€ (Visites & Repas)\n• Choix des lieux à visiter";
+
+      // 3. AGIR
+      document.getElementById('p3-text').innerText = 
+        "Appel des outils :\n• google_flights.search() → Vol A/R 240€\n• google_hotels.search() → Hôtel 320€\n• maps_local:query_places() → Louvre, Orsay\n• write_file() → Génération fichier";
+
+      // 4. OBSERVER
+      document.getElementById('p4-text').innerText = 
+        "Vérification finale :\n• Coût total : 680€ (≤ 800€)\n• Fichier écrit avec succès.\n• Condition d'arrêt satisfaite !";
+
+      // Mise à jour du fichier de sortie
+      document.getElementById('file-output').innerText = 
+`=== ITINÉRAIRE DE VOYAGE (BOUCLE UNIQUE) ===
+Budget Total : 680 € / 800 € (Validé)
+
+• Vol A/R : 240 €
+• Hôtel Paris Centre : 320 € (2 nuits)
+
+[PROGRAMME]
+• Jour 1 : Musée du Louvre (20€) + Bistro
+• Jour 2 : Musée d'Orsay (16€) + Quartier Latin
+• Jour 3 : Montmartre & Sacré-Cœur
+
+Status : Fichier itineraire_voyage.txt généré.`;
+    }
+  </script>
+
+</body>
+</html>
