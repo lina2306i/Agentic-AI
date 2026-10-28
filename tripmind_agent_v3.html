@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TripMind Agent</title>
+<style>
+:root{--ink:#12263a;--sub:#5a6b7d;--paper:#eef1f4;--card:#fff;--line:#cfd8e1;--blue:#1d4f91;--red:#c8372d;--ok:#1f7a4d;--warn:#b26a00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body::before{content:"";display:block;height:10px;background:repeating-linear-gradient(135deg,var(--red) 0 18px,#fff 18px 28px,var(--blue) 28px 46px,#fff 46px 56px)}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 48px}
+h1{font:600 2rem/1.1 ui-serif,Georgia,serif;margin:0 0 4px}
+.lead{color:var(--sub);margin:0 0 22px;max-width:70ch}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+label{display:block;font-size:.85rem;color:var(--sub);margin:10px 0 3px}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;color:var(--ink);background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btns{display:flex;gap:8px;margin-top:16px}
+button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:10px 14px;cursor:pointer;background:var(--blue);color:#fff;flex:1}
+button.alt{background:#fff;color:var(--ink);border:1px solid var(--line);flex:0 0 auto}
+button:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+small.hint{display:block;color:var(--sub);font-size:.78rem;margin-top:4px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.m{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.m span{display:block;font-size:.78rem;color:var(--sub)}
+.m b{font-size:1.25rem}
+@media(max-width:560px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.turn{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.turn h3{margin:0 0 6px;font-size:.95rem}
+.row{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:5px 0;border-top:1px solid #edf1f5}
+.row .ph{font-weight:600;font-size:.85rem}
+.row .tx{font:.8rem/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.p-Percevoir{color:#475569}.p-Raisonner{color:#6d28d9}.p-Agir{color:var(--blue)}.p-Observer{color:var(--ok)}
+.empty{color:var(--sub);padding:30px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+.pass{display:grid;grid-template-columns:1fr 150px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;margin-top:6px}
+.pass .main{padding:18px 20px;border-top:8px solid var(--ok)}
+.pass .stub{padding:18px 14px;border-left:2px dashed var(--line);background:#f7f9fb;text-align:center}
+.pass .route{font:600 2.2rem/1 ui-serif,Georgia,serif;margin:4px 0 12px}
+.pass dl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;margin:0}
+.pass dt{font-size:.75rem;color:var(--sub)}.pass dd{margin:0;font-weight:600}
+.pnr{font:700 1.5rem ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--ok)}
+.fail{background:var(--card);border:1px solid var(--line);border-top:8px solid var(--red);border-radius:10px;padding:16px 20px;margin-top:6px}
+.fail.warn{border-top-color:var(--warn)}
+.fail h2{margin:0 0 6px;font-size:1.15rem}
+.report{margin:12px 0 0;padding:0;list-style:none;font-size:.88rem;color:var(--sub)}
+.report b{color:var(--ink)}
+@media(max-width:560px){.pass{grid-template-columns:1fr}.pass .stub{border-left:0;border-top:2px dashed var(--line)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>TripMind Agent</h1>
+  <p class="lead">Un agent qui perçoit, raisonne, agit et observe sur 4 tours maximum. Il cherche des vols, applique la règle budgétaire et réserve le moins cher, ou s’arrête proprement.</p>
+
+  <div class="grid">
+    <form class="panel" id="f" autocomplete="off">
+      <div class="two">
+        <div><label for="o">Départ</label><input id="o" value="PAR" required></div>
+        <div><label for="d">Arrivée</label><input id="d" value="ROM" required></div>
+      </div>
+      <div class="two">
+        <div><label for="dt">Date</label><input id="dt" type="date" value="2026-11-15" required></div>
+        <div><label for="b">Budget max (€)</label><input id="b" type="number" min="1" value="350" required></div>
+      </div>
+      <label for="p">Passager</label><input id="p" value="Arij Sliti" required>
+      <label for="sc">Scénario de test</label>
+      <select id="sc">
+        <option value="normal">Réservation normale</option>
+        <option value="panne">Panne temporaire de la recherche (503)</option>
+        <option value="budget">Aucun vol sous le budget</option>
+        <option value="drift">Prix modifié pendant la réservation (409)</option>
+        <option value="paiement">Paiement refusé (402)</option>
+      </select>
+      <label for="mode">Cerveau de l’agent</label>
+      <select id="mode">
+        <option value="local">Local (règles, sans clé)</option>
+        <option value="api">Gemini (Google AI Studio, gratuit)</option>
+      </select>
+      <div id="apiBox" hidden>
+        <label for="key">Clé API Google AI Studio</label><input id="key" type="password" placeholder="AIza…">
+        <label for="model">Modèle</label><input id="model" value="gemini-2.5-flash">
+        <small class="hint">La clé reste dans cette page et ne part que vers generativelanguage.googleapis.com. Créez-la gratuitement sur aistudio.google.com/apikey.</small>
+      </div>
+      <div class="btns">
+        <button id="go" type="submit">Lancer l’agent</button>
+        <button id="stop" class="alt" type="button" disabled>Arrêter</button>
+      </div>
+    </form>
+
+    <section aria-live="polite">
+      <div class="metrics">
+        <div class="m"><span>Tours</span><b id="mT">0 / 4</b></div>
+        <div class="m"><span>Appels d’outils</span><b id="mC">0</b></div>
+        <div class="m"><span>Tokens (entrée / sortie)</span><b id="mK">0 / 0</b></div>
+        <div class="m"><span>Durée</span><b id="mD">0,0 s</b></div>
+      </div>
+      <div id="log"><div class="empty">Renseignez la demande puis lancez l’agent. Chaque tour apparaîtra ici.</div></div>
+      <div id="out"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const MAX_TURNS = 4;
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let aborted = false;
+
+const SYSTEM = `Tu es "TripMind Agent", un agent IA autonome qui cherche et réserve des billets d'avion.
+OBJECTIF : trouver le vol le moins cher qui respecte le budget maximum de l'utilisateur, puis le réserver.
+OUTILS : Flight_Search(origin, destination, date) ; Booking_Engine(flight_id, price, passenger).
+RÈGLES : le prix du vol réservé doit être inférieur ou égal au budget. Maximum ${MAX_TURNS} tours. Un appel d'outil par tour.
+BOUCLE à chaque tour : Percevoir (lire contexte et retours d'outils), Raisonner (vérifier les règles, planifier, en une ou deux phrases), Agir (appeler l'outil adapté), Observer (analyser le retour).
+ARRÊT : succès si Booking_Engine renvoie un PNR ; échec si aucun vol ne respecte le budget ; échec si erreur de paiement irrécupérable (ex. 402). Si un outil renvoie une erreur temporaire (503), réessaie.
+FORMAT : dans ton texte, écris uniquement 1 à 2 phrases de raisonnement en français, sans titres, sans gras, sans mots « Percevoir/Raisonner/Agir/Observer ». Fais ensuite l'appel d'outil.
+Quand tu as le PNR, réponds par un court message final sans appeler d'outil.`;
+
+const TOOLS = [
+  {name:"Flight_Search",description:"Recherche les vols disponibles et leurs prix en euros.",input_schema:{type:"object",properties:{origin:{type:"string"},destination:{type:"string"},date:{type:"string",description:"AAAA-MM-JJ"}},required:["origin","destination","date"]}},
+  {name:"Booking_Engine",description:"Réserve et paie un vol. Renvoie un PNR en cas de succès.",input_schema:{type:"object",properties:{flight_id:{type:"string"},price:{type:"number"},passenger:{type:"string"}},required:["flight_id","price","passenger"]}}
+];
+
+/* ---------- Outils simulés (dynamiques, déterministes par recherche) ---------- */
+function rng(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}
+  return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return((h^=h>>>16)>>>0)/4294967296}}
+
+function flightSearch(a,ctx){
+  const c=ctx.cfg; ctx.searchCalls++;
+  if(c.scenario==="panne"&&ctx.searchCalls===1) return {status:503,error:"Service de recherche indisponible, réessayez."};
+  const r=rng([a.origin,a.destination,a.date,c.scenario].join("|"));
+  const TN=["TUN","DJE","MIR","NBE","SFA","TOE"],FR=["PAR","CDG","ORY","LYS","MRS","NCE","TLS","BOD"];
+  const ends=[String(a.origin).toUpperCase(),String(a.destination).toUpperCase()];
+  const air=ends.some(x=>TN.includes(x))?[["Tunisair","TU"],["Nouvelair","BJ"],["Transavia","TO"],["ITA Airways","AZ"],["Ryanair","FR"]]
+    :ends.some(x=>FR.includes(x))?[["ITA Airways","AZ"],["Air France","AF"],["Transavia","TO"],["Vueling","VY"],["easyJet","U2"]]
+    :[["Lufthansa","LH"],["Ryanair","FR"],["Wizz Air","W6"],["ITA Airways","AZ"],["easyJet","U2"]];
+  air.splice(0,air.length-(3+Math.floor(r()*3)));
+  let fl=air.map(([name,code])=>{
+    const lo=c.scenario==="budget"?1.1:0.45, hi=c.scenario==="budget"?1.6:1.35;
+    return {flight_id:code+Math.floor(100+r()*800),airline:name,departure:String(6+Math.floor(r()*15)).padStart(2,"0")+":"+["00","15","30","45"][Math.floor(r()*4)],
+      price:Math.round(c.budget*(lo+r()*(hi-lo))),currency:"EUR",stops:r()<.75?0:1};});
+  fl.forEach(f=>{if(ctx.drift[f.flight_id])f.price=ctx.drift[f.flight_id]});
+  if(c.scenario==="normal"&&Math.min(...fl.map(f=>f.price))>c.budget) fl[0].price=Math.round(c.budget*.6);
+  ctx.lastFlights=fl;
+  return {status:200,flights:fl};
+}
+
+function bookingEngine(a,ctx){
+  const c0=ctx.cfg;
+  const f=ctx.lastFlights.find(x=>x.flight_id===a.flight_id);
+  if(a.price>ctx.cfg.budget||(f&&f.price>ctx.cfg.budget)) return {status:403,error:`BUDGET_GUARD : ${a.price} € dépasse le budget de ${ctx.cfg.budget} €. Réservation bloquée par le runtime.`};
+  if(!f) return {status:404,error:"Vol inconnu : lancez d'abord une recherche."};
+  if(c0.scenario==="drift"&&!ctx.drift[f.flight_id]){const np=Math.round(f.price*1.08);ctx.drift[f.flight_id]=np;f.price=np;
+    return {status:409,error:`Le tarif a changé pendant la réservation : nouveau prix ${np} €.`};}
+  if(f.price!==a.price) return {status:409,error:`Prix différent : le tarif actuel est ${f.price} €.`};
+  if(ctx.cfg.scenario==="paiement") return {status:402,error:"Paiement refusé par la passerelle."};
+  const r=rng(f.flight_id+a.passenger+Date.now()), ch="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let pnr="";for(let i=0;i<6;i++)pnr+=ch[Math.floor(r()*ch.length)];
+  const seat=(1+Math.floor(r()*28))+"ABCDEF"[Math.floor(r()*6)];
+  ctx.booking={pnr,flight:f,seat,passenger:a.passenger};
+  return {status:200,pnr,seat,message:"Réservation confirmée."};
+}
+
+async function execTool(call,ctx){
+  await sleep(500); ctx.tools++;
+  if(call.name==="Flight_Search") return flightSearch(call.input,ctx);
+  if(call.name==="Booking_Engine") return bookingEngine(call.input,ctx);
+  return {status:400,error:"Outil inconnu : "+call.name};
+}
+
+/* ---------- Cerveaux : local (règles) ou Gemini (API) ---------- */
+let uid=0; const id=()=>"toolu_local_"+(++uid);
+function localBrain(ctx){
+  const c=ctx.cfg, last=ctx.lastObs;
+  const search={id:id(),name:"Flight_Search",input:{origin:c.origin,destination:c.dest,date:c.date}};
+  let reasoning,call;
+  if(!last){reasoning="Je n’ai aucun vol en mémoire. Je dois d’abord interroger Flight_Search.";call=search;}
+  else if(last.name==="Flight_Search"&&last.res.status!==200){reasoning=`La recherche a échoué (HTTP ${last.res.status}). L’erreur est temporaire, je réessaie.`;call=search;}
+  else if(last.name==="Flight_Search"){
+    const ok=last.res.flights.filter(f=>f.price<=c.budget).sort((a,b)=>a.price-b.price), best=ok[0];
+    reasoning=`${ok.length} vol(s) sur ${last.res.flights.length} respectent le budget de ${c.budget} €. Le moins cher est ${best.flight_id} à ${best.price} €. Je le réserve.`;
+    call={id:id(),name:"Booking_Engine",input:{flight_id:best.flight_id,price:best.price,passenger:c.passenger}};
+  } else {reasoning=`La réservation a renvoyé HTTP ${last.res.status}. Je relance une recherche pour repartir de tarifs à jour.`;call=search;}
+  return {reasoning,calls:[call],raw:[{type:"text",text:reasoning},{type:"tool_use",...call}],usage:null};
+}
+
+const toSchema=o=>o.type==="object"?{type:"OBJECT",properties:Object.fromEntries(Object.entries(o.properties).map(([k,v])=>[k,{type:v.type==="number"?"NUMBER":"STRING",description:v.description||k}])),required:o.required}:o;
+function toGemini(msgs){
+  return msgs.map(m=>{
+    if(m.role==="assistant") return {role:"model",parts:m.content};
+    if(typeof m.content==="string") return {role:"user",parts:[{text:m.content}]};
+    return {role:"user",parts:m.content.map(r=>({functionResponse:{name:r.name,response:r.res}}))};
+  });
+}
+async function llmBrain(ctx){
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(ctx.cfg.model)}:generateContent`;
+  const t=Date.now();
+  const call=async cfg=>{
+    const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json","x-goog-api-key":ctx.cfg.key},
+      body:JSON.stringify({systemInstruction:{parts:[{text:SYSTEM}]},contents:toGemini(ctx.msgs),
+        tools:[{functionDeclarations:TOOLS.map(t=>({name:t.name,description:t.description,parameters:toSchema(t.input_schema)}))}],generationConfig:cfg})});
+    return [r,await r.json()];
+  };
+  // Réflexion minimale = réponse beaucoup plus rapide. Si le modèle refuse ce réglage, on réessaie sans.
+  let [r,d]=await call({maxOutputTokens:1000,thinkingConfig:{thinkingLevel:"minimal"}});
+  if(!r.ok&&r.status===400&&/think/i.test(JSON.stringify(d))) [r,d]=await call({maxOutputTokens:1000});
+  if(!r.ok) throw new Error("API Gemini : "+(d.error&&d.error.message||r.status));
+  const parts=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
+  const calls=parts.filter(p=>p.functionCall).map(p=>({id:"call_"+(++uid),name:p.functionCall.name,input:p.functionCall.args||{}}));
+  const u=d.usageMetadata;
+  return {reasoning:parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join("\n").trim(),calls,raw:parts,ms:Date.now()-t,
+    usage:u?{input_tokens:u.promptTokenCount||0,output_tokens:(u.candidatesTokenCount||0)+(u.thoughtsTokenCount||0)}:null};
+}
+
+/* ---------- UI ---------- */
+function addTurn(n){
+  const el=document.createElement("div");el.className="turn";el.innerHTML=`<h3>Tour ${n} sur ${MAX_TURNS}</h3>`;
+  $("#log").appendChild(el);return el;
+}
+async function show(el,phase,text){
+  const row=document.createElement("div");row.className="row";
+  const ph=document.createElement("div");ph.className="ph p-"+phase;ph.textContent=phase;
+  const tx=document.createElement("div");tx.className="tx";tx.textContent=text;
+  row.append(ph,tx);el.appendChild(row);row.scrollIntoView({block:"nearest",behavior:"smooth"});
+  await sleep(450);
+}
+function metrics(ctx,turn,t0){
+  $("#mT").textContent=turn+" / "+MAX_TURNS;$("#mC").textContent=ctx.tools;
+  $("#mK").textContent=ctx.tIn+" / "+ctx.tOut;$("#mD").textContent=((Date.now()-t0)/1000).toFixed(1).replace(".",",")+" s";
+}
+const est=x=>Math.ceil(JSON.stringify(x).length/4);
+
+function summarize(name,res){
+  if(res.status!==200) return `HTTP ${res.status} — ${res.error}`;
+  if(name==="Flight_Search"){const p=res.flights.map(f=>f.price);
+    return `HTTP 200 — ${res.flights.length} vols, de ${Math.min(...p)} € à ${Math.max(...p)} €\n`+res.flights.map(f=>`  ${f.flight_id}  ${f.airline}  ${f.departure}  ${f.price} €`).join("\n");}
+  return `HTTP 200 — PNR ${res.pnr}, siège ${res.seat}`;
+}
+
+function evalStop(call,res,ctx){
+  const b=ctx.cfg.budget;
+  if(call.name==="Booking_Engine"&&res.status===200) return {ok:true,code:"SUCCES",reason:"PNR reçu du Booking_Engine."};
+  if(call.name==="Booking_Engine"&&res.status===402) return {ok:false,code:"ERREUR_PAIEMENT",reason:"Erreur irrécupérable de la passerelle de paiement (HTTP 402)."};
+  if(call.name==="Flight_Search"&&res.status===200&&res.flights.every(f=>f.price>b)) return {ok:false,code:"HORS_BUDGET",reason:`Aucun vol à ${b} € ou moins (le moins cher : ${Math.min(...res.flights.map(f=>f.price))} €).`};
+  return null;
+}
+
+/* ---------- Runtime : la boucle agentique ---------- */
+async function run(cfg){
+  aborted=false;
+  const ctx={cfg,drift:{},lastFlights:[],searchCalls:0,tools:0,tIn:0,tOut:0,lastObs:null,booking:null,msgs:[]};
+  const t0=Date.now();$("#log").innerHTML="";$("#out").innerHTML="";
+  const request=`Trajet : ${cfg.origin} → ${cfg.dest}, le ${cfg.date}, passager ${cfg.passenger}, budget maximum ${cfg.budget} €.`;
+  ctx.msgs.push({role:"user",content:`Bonjour TripMind Agent. Je souhaite réserver un voyage.\n${request}\nExécute la boucle agentique complète, respecte la validation budgétaire, appelle les outils nécessaires et confirme la réservation avec un code PNR.`});
+  let outcome=null,turn=0;
+  while(!outcome&&turn<MAX_TURNS&&!aborted){
+    turn++;const el=addTurn(turn);metrics(ctx,turn,t0);
+    await show(el,"Percevoir",turn===1?request:`Retour de ${ctx.lastObs.name} : ${summarize(ctx.lastObs.name,ctx.lastObs.res).split("\n")[0]}`);
+    let brain;
+    try{brain=cfg.mode==="api"?await llmBrain(ctx):localBrain(ctx);}
+    catch(e){outcome={ok:false,code:"ERREUR_SYSTEME",reason:e.message};await show(el,"Observer",e.message);break;}
+    ctx.tIn+=brain.usage?brain.usage.input_tokens:est([SYSTEM,ctx.msgs]);
+    ctx.tOut+=brain.usage?brain.usage.output_tokens:est(brain.raw);
+    ctx.msgs.push({role:"assistant",content:brain.raw});
+    await show(el,"Raisonner",(brain.reasoning||"(pas de texte de raisonnement)")+(brain.ms?`\n[modèle : ${(brain.ms/1000).toFixed(1).replace(".",",")} s]`:""));
+    if(!brain.calls.length){
+      await show(el,"Agir","Réponse finale, aucun appel d’outil.");
+      outcome=ctx.booking?{ok:true,code:"SUCCES",reason:"Réservation confirmée."}:{ok:false,code:"FIN_SANS_RESERVATION",reason:"L’agent s’est arrêté sans réservation."};
+      break;
+    }
+    await show(el,"Agir",brain.calls.map(c=>`${c.name}(${Object.entries(c.input).map(([k,v])=>k+"="+JSON.stringify(v)).join(", ")})`).join("\n"));
+    const results=[];
+    for(const call of brain.calls){
+      const res=await execTool(call,ctx);ctx.lastObs={name:call.name,res};
+      await show(el,"Observer",summarize(call.name,res));
+      results.push({type:"tool_result",tool_use_id:call.id,name:call.name,res,content:JSON.stringify(res)});
+      outcome=outcome||evalStop(call,res,ctx);
+    }
+    ctx.msgs.push({role:"user",content:results});metrics(ctx,turn,t0);
+  }
+  if(aborted) outcome={ok:false,code:"ARRET_MANUEL",reason:"Exécution interrompue par l’utilisateur."};
+  if(!outcome) outcome={ok:false,code:"PLAFOND_TOURS",reason:`Plafond de ${MAX_TURNS} tours atteint sans réservation.`};
+  metrics(ctx,turn,t0);report(ctx,outcome,turn,Date.now()-t0);
+}
+
+function report(ctx,o,turn,ms){
+  const c=ctx.cfg,out=$("#out"),fmt=d=>new Date(d+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+  const list=`<ul class="report"><li><b>Statut :</b> ${o.code}</li><li><b>Motif d’arrêt :</b> ${o.reason.replace(/</g,"&lt;")}</li><li><b>Tours :</b> ${turn} / ${MAX_TURNS}, <b>appels d’outils :</b> ${ctx.tools}, <b>tokens :</b> ${ctx.tIn} en entrée, ${ctx.tOut} en sortie${c.mode==="api"?"":" (estimés)"}, <b>durée :</b> ${(ms/1000).toFixed(1).replace(".",",")} s</li></ul>`;
+  if(o.ok&&ctx.booking){
+    const b=ctx.booking,f=b.flight,e=s=>String(s).replace(/</g,"&lt;");
+    out.innerHTML=`<div class="pass"><div class="main"><div>${e(f.airline)} · vol ${e(f.flight_id)}</div><div class="route">${e(c.origin)} → ${e(c.dest)}</div>
+      <dl><div><dt>Passager</dt><dd>${e(b.passenger)}</dd></div><div><dt>Date</dt><dd>${fmt(c.date)}</dd></div><div><dt>Départ</dt><dd>${f.departure}</dd></div>
+      <div><dt>Prix payé</dt><dd>${f.price} € (budget ${c.budget} €)</dd></div><div><dt>Siège</dt><dd>${b.seat}</dd></div><div><dt>Escales</dt><dd>${f.stops}</dd></div></dl>${list}</div>
+      <div class="stub"><div style="font-size:.75rem;color:var(--sub)">Code PNR</div><div class="pnr">${b.pnr}</div></div></div>`;
+  } else {
+    const titles={HORS_BUDGET:"Aucun vol dans le budget",ERREUR_PAIEMENT:"Paiement refusé",PLAFOND_TOURS:"Plafond de tours atteint"};
+    out.innerHTML=`<div class="fail ${o.code==="HORS_BUDGET"?"warn":""}"><h2>${titles[o.code]||"Réservation non effectuée"}</h2>
+      <div>${o.code==="HORS_BUDGET"?"Augmentez le budget ou changez de date, puis relancez l’agent.":"Aucun billet n’a été émis."}</div>${list}</div>`;
+  }
+}
+
+$("#mode").onchange=e=>{$("#apiBox").hidden=e.target.value!=="api"};
+$("#stop").onclick=()=>{aborted=true};
+$("#f").onsubmit=async e=>{
+  e.preventDefault();
+  const cfg={origin:$("#o").value.trim().toUpperCase(),dest:$("#d").value.trim().toUpperCase(),date:$("#dt").value,budget:+$("#b").value,
+    passenger:$("#p").value.trim(),scenario:$("#sc").value,mode:$("#mode").value,key:$("#key").value.trim(),model:$("#model").value.trim()};
+  if(cfg.mode==="api"&&!cfg.key){alert("Entrez votre clé API ou choisissez le cerveau local.");return;}
+  $("#go").disabled=true;$("#stop").disabled=false;
+  try{await run(cfg);}finally{$("#go").disabled=false;$("#stop").disabled=true;}
+};
+</script>
+</body>
+</html>
